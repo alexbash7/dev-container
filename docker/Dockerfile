@@ -48,8 +48,11 @@ RUN mkdir -p /var/run/sshd \
 # ============================================================
 # 6. Create coder user (limited sudo — apt/dpkg only)
 # ============================================================
-RUN useradd -m -s /bin/bash -u 1000 coder \
-    && echo "coder ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg" >> /etc/sudoers.d/coder
+RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -s /bin/bash -u 1000 coder \
+    && mkdir -p /etc/sudoers.d \
+    && echo "coder ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg" > /etc/sudoers.d/coder \
+    && chmod 440 /etc/sudoers.d/coder
 
 # ============================================================
 # 7. Bash history tracking (invisible to candidate)
