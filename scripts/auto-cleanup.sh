@@ -28,7 +28,7 @@ for CONTAINER in $(docker ps -a --filter "label=sandbox.name" --format "{{.Names
         userdel "$NAME" 2>/dev/null || true
 
         # Remove nginx config
-        rm -f "/etc/nginx/sites-available/sandbox-${NAME}" "/etc/nginx/sites-enabled/sandbox-${NAME}"
+        rm -f "/opt/nginx/conf.d/sandbox-${NAME}.conf"
 
         # Keep data for review
         echo "  Data preserved at /opt/dev-sandbox/data/${NAME}"

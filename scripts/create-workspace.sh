@@ -117,10 +117,13 @@ fi
 # ============================================================
 # 7. Create nginx config
 # ============================================================
-NGINX_CONF="/etc/nginx/sites-available/sandbox-${SANDBOX_NAME}"
+NGINX_CONF_DIR="/opt/nginx/conf.d"
+NGINX_CONF="${NGINX_CONF_DIR}/sandbox-${SANDBOX_NAME}.conf"
+NGINX_CONTAINER="nginx-nginx-1"
+
 cat > "$NGINX_CONF" << NGINX
 upstream sandbox_${SANDBOX_NAME//-/_} {
-    server 127.0.0.1:${WEB_PORT};
+    server host.docker.internal:${WEB_PORT};
 }
 
 server {
@@ -139,13 +142,13 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_http_version 1.1;
 
-        # If container is stopped, nginx gets 502 → trigger auto-start
+        # If container is stopped, show "starting" page
         error_page 502 = @start_container;
     }
 
     location @start_container {
         default_type text/html;
-        return 200 '<!DOCTYPE html>
+        return 503 '<!DOCTYPE html>
 <html>
 <head><title>Starting workspace...</title>
 <meta http-equiv="refresh" content="5">
@@ -153,22 +156,16 @@ server {
 .spinner{border:4px solid #333;border-top:4px solid #0078d4;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
 </head>
-<body><div class="spinner"></div><p style="margin-top:20px">Starting your workspace...</p>
-<script>fetch("/api/start").then(()=>setTimeout(()=>location.reload(),5000))</script>
+<body><div class="spinner"></div><p style="margin-top:20px">Starting your workspace... Please wait and refresh in a few seconds.</p>
 </body></html>';
-    }
-
-    location = /api/start {
-        content_by_lua_block {
-            os.execute("docker start sandbox-${SANDBOX_NAME} 2>/dev/null &")
-            ngx.say('{"status":"starting"}')
-        }
     }
 }
 NGINX
 
-ln -sf "$NGINX_CONF" "/etc/nginx/sites-enabled/sandbox-${SANDBOX_NAME}" 2>/dev/null
-nginx -t 2>/dev/null && nginx -s reload 2>/dev/null || true
+# Reload nginx inside its container
+docker exec "$NGINX_CONTAINER" nginx -t 2>/dev/null && \
+    docker exec "$NGINX_CONTAINER" nginx -s reload 2>/dev/null || \
+    echo "Warning: nginx reload failed" >&2
 
 # ============================================================
 # 8. Output credentials as JSON

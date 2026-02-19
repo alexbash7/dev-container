@@ -28,8 +28,8 @@ userdel "$NAME" 2>/dev/null || true
 echo "  Host user removed"
 
 # Remove nginx config
-rm -f "/etc/nginx/sites-available/sandbox-${NAME}" "/etc/nginx/sites-enabled/sandbox-${NAME}"
-nginx -t 2>/dev/null && nginx -s reload 2>/dev/null || true
+rm -f "/opt/nginx/conf.d/sandbox-${NAME}.conf"
+docker exec nginx-nginx-1 nginx -s reload 2>/dev/null || true
 echo "  Nginx config removed"
 
 # Optionally remove data
