@@ -19,33 +19,16 @@ fi
 # ============================================================
 # 1. Fix permissions on mounted volumes
 # ============================================================
-# Workspace — owned by user
 chown -R $USERNAME:$USERNAME $HOME_DIR/workspace
 
-# Logs — root-owned dir, but create user-writable files
-chown root:root /var/log/sandbox
-chmod 700 /var/log/sandbox
-
-# Pre-create all log files with correct permissions
-touch /var/log/sandbox/file_changes.log
-touch /var/log/sandbox/sessions.log
-touch /var/log/sandbox/entrypoint.log
-
-# Bash history — hidden in user's home, symlinked to logs
-HIST_FILE="$HOME_DIR/.cache/.system_journal"
+# Bash history — hidden in user's home
 mkdir -p $HOME_DIR/.cache
-touch "$HIST_FILE"
-chown $USERNAME:$USERNAME "$HIST_FILE" $HOME_DIR/.cache
-# Copy to logs on shutdown, but also hardlink for live access
-ln -f "$HIST_FILE" /var/log/sandbox/.bash_history_audit 2>/dev/null || true
+touch "$HOME_DIR/.cache/.system_journal"
+chown -R $USERNAME:$USERNAME $HOME_DIR/.cache
 
-# code-server data dir
-mkdir -p $HOME_DIR/.code-server/User
-chown -R $USERNAME:$USERNAME $HOME_DIR/.code-server
-mkdir -p $HOME_DIR/.config
-chown -R $USERNAME:$USERNAME $HOME_DIR/.config
-mkdir -p $HOME_DIR/.local
-chown -R $USERNAME:$USERNAME $HOME_DIR/.local
+# code-server data dirs
+mkdir -p $HOME_DIR/.code-server/User $HOME_DIR/.config $HOME_DIR/.local
+chown -R $USERNAME:$USERNAME $HOME_DIR/.code-server $HOME_DIR/.config $HOME_DIR/.local
 
 # ============================================================
 # 2. Initialize workspace (clone task on first run)
@@ -54,36 +37,27 @@ INIT_MARKER="/var/log/sandbox/.initialized"
 if [ ! -f "$INIT_MARKER" ] && [ -n "$TASK_REPO" ]; then
     echo "Initializing workspace: TASK_REPO=$TASK_REPO TASK_FOLDER=$TASK_FOLDER" >> /var/log/sandbox/entrypoint.log
     sudo -u $USERNAME TASK_REPO="$TASK_REPO" TASK_FOLDER="$TASK_FOLDER" CANDIDATE_NAME="$CANDIDATE_NAME" bash /usr/lib/sandbox/startup.sh >> /var/log/sandbox/entrypoint.log 2>&1
-    RESULT=$?
-    echo "startup.sh exit code: $RESULT" >> /var/log/sandbox/entrypoint.log
+    echo "startup.sh exit code: $?" >> /var/log/sandbox/entrypoint.log
     touch "$INIT_MARKER"
-    chown $USERNAME:$USERNAME "$INIT_MARKER"
-elif [ -f "$INIT_MARKER" ]; then
-    echo "Workspace already initialized, skipping" >> /var/log/sandbox/entrypoint.log
 fi
 
 # ============================================================
-# 3. Start file tracking (background, as root — invisible)
-# ============================================================
-/usr/lib/sandbox/agent-helper $HOME_DIR/workspace /var/log/sandbox &
-
-# ============================================================
-# 4. Record session start
+# 3. Record session start
 # ============================================================
 echo "start: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> /var/log/sandbox/sessions.log
 
 # ============================================================
-# 5. Generate SSH host keys if missing (first run)
+# 4. Generate SSH host keys if missing
 # ============================================================
 ssh-keygen -A 2>/dev/null
 
 # ============================================================
-# 6. Start SSH server
+# 5. Start SSH server
 # ============================================================
 /usr/sbin/sshd
 
 # ============================================================
-# 7. Start code-server (as coder user, foreground)
+# 6. Start code-server (foreground)
 # ============================================================
 export PASSWORD="$SANDBOX_PASSWORD"
 exec sudo -u $USERNAME env PASSWORD="$SANDBOX_PASSWORD" /opt/code-server/bin/code-server \

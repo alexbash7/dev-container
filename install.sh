@@ -10,6 +10,9 @@ INSTALL_DIR="/opt/dev-sandbox"
 
 echo "Installing dev-sandbox to $INSTALL_DIR..."
 
+# Install host dependencies (inotify-tools for file tracking)
+apt-get update && apt-get install -y inotify-tools git
+
 # Create directories
 mkdir -p "$INSTALL_DIR/data"
 

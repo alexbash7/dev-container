@@ -182,7 +182,15 @@ docker exec "$NGINX_CONTAINER" nginx -t 2>/dev/null && \
     echo "Warning: nginx reload failed" >&2
 
 # ============================================================
-# 8. Output credentials as JSON
+# 8. Start host-level tracker
+# ============================================================
+TRACKER_SCRIPT="$SCRIPT_DIR/scripts/host-tracker.sh"
+TRACKER_PID_FILE="$DATA_DIR/tracker.pid"
+nohup bash "$TRACKER_SCRIPT" "$SANDBOX_NAME" > /dev/null 2>&1 &
+echo $! > "$TRACKER_PID_FILE"
+
+# ============================================================
+# 9. Output credentials as JSON
 # ============================================================
 cat << OUTPUT
 {

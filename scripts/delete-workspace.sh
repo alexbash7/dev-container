@@ -27,6 +27,13 @@ echo "  Container removed"
 userdel "$NAME" 2>/dev/null || true
 echo "  Host user removed"
 
+# Stop host tracker
+if [ -f "$DATA_DIR/tracker.pid" ]; then
+    kill $(cat "$DATA_DIR/tracker.pid") 2>/dev/null || true
+    rm -f "$DATA_DIR/tracker.pid"
+    echo "  Host tracker stopped"
+fi
+
 # Remove nginx config
 rm -f "/opt/nginx/conf.d/sandbox-${NAME}.conf"
 docker exec nginx-nginx-1 nginx -s reload 2>/dev/null || true

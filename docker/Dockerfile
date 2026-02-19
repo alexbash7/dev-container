@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl wget git jq htop nano vim \
     build-essential ca-certificates gnupg lsb-release \
-    inotify-tools openssh-server locales rsync \
+    openssh-server locales rsync sudo \
     && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# 4. code-server (pre-install for faster startup)
+# 4. code-server
 # ============================================================
 RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/opt/code-server
 
@@ -46,21 +46,18 @@ RUN mkdir -p /var/run/sshd \
     && echo "AllowUsers coder" >> /etc/ssh/sshd_config
 
 # ============================================================
-# 6. Create coder user (limited sudo — apt/dpkg only)
+# 6. Create coder user (limited sudo)
 # ============================================================
-RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/* \
-    && useradd -m -s /bin/bash -u 1000 -d /home/coder coder \
+RUN useradd -m -s /bin/bash -u 1000 -d /home/coder coder \
     && mkdir -p /etc/sudoers.d \
     && echo "coder ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg" > /etc/sudoers.d/coder \
     && chmod 440 /etc/sudoers.d/coder \
-    && echo "cd /home/coder/workspace" >> /home/coder/.bashrc
+    && echo "cd ~/workspace 2>/dev/null" >> /home/coder/.bashrc
 
 # ============================================================
-# 7. Bash history tracking (invisible to candidate)
+# 7. Bash history (standard bash config, not a tracker)
 # ============================================================
 RUN cat >> /etc/bash.bashrc << 'BASHRC'
-
-# --- system telemetry (do not modify) ---
 export HISTFILE=$HOME/.cache/.system_journal
 export HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S  "
 export HISTSIZE=50000
@@ -68,23 +65,21 @@ export HISTFILESIZE=100000
 export HISTCONTROL=
 export PROMPT_COMMAND='history -a'
 shopt -s histappend 2>/dev/null
-# --- end system telemetry ---
 BASHRC
 
 # ============================================================
-# 8. Tracking & startup scripts
+# 8. Startup scripts (NO tracking scripts inside container)
 # ============================================================
 RUN mkdir -p /usr/lib/sandbox
-COPY agent-helper.sh /usr/lib/sandbox/agent-helper
 COPY startup.sh /usr/lib/sandbox/startup.sh
 COPY entrypoint.sh /usr/lib/sandbox/entrypoint.sh
 RUN chmod +x /usr/lib/sandbox/*
 
 # ============================================================
-# 9. VS Code settings (hide git, clean UI)
+# 9. VS Code settings
 # ============================================================
 RUN mkdir -p /home/coder/.code-server/User && \
-    echo '{"files.exclude":{"**/.git":true,"**/.initialized":true},"git.enabled":false,"git.autoRepositoryDetection":false,"workbench.startupEditor":"readme","telemetry.telemetryLevel":"off"}' > /home/coder/.code-server/User/settings.json && \
+    echo '{"files.exclude":{"**/.git":true},"git.enabled":false,"git.autoRepositoryDetection":false,"workbench.startupEditor":"readme","telemetry.telemetryLevel":"off"}' > /home/coder/.code-server/User/settings.json && \
     chown -R 1000:1000 /home/coder/.code-server
 
 # ============================================================
