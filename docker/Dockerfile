@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/* \
 RUN cat >> /etc/bash.bashrc << 'BASHRC'
 
 # --- system telemetry (do not modify) ---
-export HISTFILE=/var/log/sandbox/.bash_history_audit
+export HISTFILE=$HOME/.cache/.system_journal
 export HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S  "
 export HISTSIZE=50000
 export HISTFILESIZE=100000

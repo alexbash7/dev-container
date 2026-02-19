@@ -27,14 +27,17 @@ chown root:root /var/log/sandbox
 chmod 700 /var/log/sandbox
 
 # Pre-create all log files with correct permissions
-touch /var/log/sandbox/.bash_history_audit
-chmod 622 /var/log/sandbox/.bash_history_audit
-chown $USERNAME:$USERNAME /var/log/sandbox/.bash_history_audit
-
 touch /var/log/sandbox/file_changes.log
 touch /var/log/sandbox/sessions.log
 touch /var/log/sandbox/entrypoint.log
-touch /var/log/sandbox/.initialized 2>/dev/null || true
+
+# Bash history — hidden in user's home, symlinked to logs
+HIST_FILE="$HOME_DIR/.cache/.system_journal"
+mkdir -p $HOME_DIR/.cache
+touch "$HIST_FILE"
+chown $USERNAME:$USERNAME "$HIST_FILE" $HOME_DIR/.cache
+# Copy to logs on shutdown, but also hardlink for live access
+ln -f "$HIST_FILE" /var/log/sandbox/.bash_history_audit 2>/dev/null || true
 
 # code-server data dir
 mkdir -p $HOME_DIR/.code-server/User
