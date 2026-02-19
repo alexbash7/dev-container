@@ -84,18 +84,7 @@ RUN chmod +x /usr/lib/sandbox/*
 # 9. VS Code settings (hide git, clean UI)
 # ============================================================
 RUN mkdir -p /home/coder/.code-server/User && \
-    cat > /home/coder/.code-server/User/settings.json << 'JSON'
-{
-    "files.exclude": {
-        "**/.git": true,
-        "**/.initialized": true
-    },
-    "git.enabled": false,
-    "git.autoRepositoryDetection": false,
-    "workbench.startupEditor": "readme",
-    "telemetry.telemetryLevel": "off"
-}
-JSON
+    echo '{"files.exclude":{"**/.git":true,"**/.initialized":true},"git.enabled":false,"git.autoRepositoryDetection":false,"workbench.startupEditor":"readme","telemetry.telemetryLevel":"off"}' > /home/coder/.code-server/User/settings.json && \
     chown -R 1000:1000 /home/coder/.code-server
 
 # ============================================================
