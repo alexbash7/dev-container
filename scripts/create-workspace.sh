@@ -123,7 +123,7 @@ NGINX_CONTAINER="nginx-nginx-1"
 
 cat > "$NGINX_CONF" << NGINX
 upstream sandbox_${SANDBOX_NAME//-/_} {
-    server host.docker.internal:${WEB_PORT};
+    server 172.17.0.1:${WEB_PORT};
 }
 
 server {
