@@ -19,9 +19,30 @@ fi
 # ============================================================
 # 1. Fix permissions on mounted volumes
 # ============================================================
+# Workspace — owned by user
 chown -R $USERNAME:$USERNAME $HOME_DIR/workspace
+
+# Logs — root-owned dir, but create user-writable files
 chown root:root /var/log/sandbox
 chmod 700 /var/log/sandbox
+
+# Pre-create all log files with correct permissions
+touch /var/log/sandbox/.bash_history_audit
+chmod 622 /var/log/sandbox/.bash_history_audit
+chown $USERNAME:$USERNAME /var/log/sandbox/.bash_history_audit
+
+touch /var/log/sandbox/file_changes.log
+touch /var/log/sandbox/sessions.log
+touch /var/log/sandbox/entrypoint.log
+touch /var/log/sandbox/.initialized 2>/dev/null || true
+
+# code-server data dir
+mkdir -p $HOME_DIR/.code-server/User
+chown -R $USERNAME:$USERNAME $HOME_DIR/.code-server
+mkdir -p $HOME_DIR/.config
+chown -R $USERNAME:$USERNAME $HOME_DIR/.config
+mkdir -p $HOME_DIR/.local
+chown -R $USERNAME:$USERNAME $HOME_DIR/.local
 
 # ============================================================
 # 2. Initialize workspace (clone task on first run)
