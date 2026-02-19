@@ -18,7 +18,7 @@ chmod 700 /var/log/sandbox
 # ============================================================
 # 2. Initialize workspace (clone task on first run)
 # ============================================================
-INIT_MARKER="/home/coder/workspace/.initialized"
+INIT_MARKER="/var/log/sandbox/.initialized"
 if [ ! -f "$INIT_MARKER" ] && [ -n "$TASK_REPO" ]; then
     echo "Initializing workspace: TASK_REPO=$TASK_REPO TASK_FOLDER=$TASK_FOLDER" >> /var/log/sandbox/entrypoint.log
     sudo -u coder TASK_REPO="$TASK_REPO" TASK_FOLDER="$TASK_FOLDER" CANDIDATE_NAME="$CANDIDATE_NAME" bash /usr/lib/sandbox/startup.sh >> /var/log/sandbox/entrypoint.log 2>&1
@@ -59,4 +59,5 @@ exec sudo -u coder env PASSWORD="$SANDBOX_PASSWORD" /opt/code-server/bin/code-se
     --port 13337 \
     --host 0.0.0.0 \
     --user-data-dir /home/coder/.code-server \
+    --welcome-text "Enter your password to access the workspace." \
     /home/coder/workspace

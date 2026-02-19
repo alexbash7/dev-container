@@ -80,7 +80,25 @@ COPY entrypoint.sh /usr/lib/sandbox/entrypoint.sh
 RUN chmod +x /usr/lib/sandbox/*
 
 # ============================================================
-# 9. Working directories
+# 9. VS Code settings (hide git, clean UI)
+# ============================================================
+RUN mkdir -p /home/coder/.code-server/User && \
+    cat > /home/coder/.code-server/User/settings.json << 'JSON'
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.initialized": true
+    },
+    "git.enabled": false,
+    "git.autoRepositoryDetection": false,
+    "workbench.startupEditor": "readme",
+    "telemetry.telemetryLevel": "off"
+}
+JSON
+    chown -R 1000:1000 /home/coder/.code-server
+
+# ============================================================
+# 10. Working directories
 # ============================================================
 RUN mkdir -p /home/coder/workspace /var/log/sandbox \
     && chown -R coder:coder /home/coder \
