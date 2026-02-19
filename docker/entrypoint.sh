@@ -6,11 +6,11 @@ set -e
 # ============================================================
 USERNAME="${CANDIDATE_NAME:-coder}"
 if [ "$USERNAME" != "coder" ] && ! id "$USERNAME" >/dev/null 2>&1; then
-    usermod -l "$USERNAME" -d "/home/$USERNAME" -m coder 2>/dev/null || true
+    usermod -l "$USERNAME" coder 2>/dev/null || true
     groupmod -n "$USERNAME" coder 2>/dev/null || true
     sed -i "s/AllowUsers coder/AllowUsers $USERNAME/" /etc/ssh/sshd_config
 fi
-HOME_DIR="/home/$USERNAME"
+HOME_DIR="/home/coder"
 
 if [ -n "$SANDBOX_PASSWORD" ]; then
     echo "$USERNAME:$SANDBOX_PASSWORD" | chpasswd
