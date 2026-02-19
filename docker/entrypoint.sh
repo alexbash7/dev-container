@@ -33,7 +33,7 @@ if [ ! -f "$INIT_MARKER" ] && [ -n "$TASK_REPO" ]; then
     RESULT=$?
     echo "startup.sh exit code: $RESULT" >> /var/log/sandbox/entrypoint.log
     touch "$INIT_MARKER"
-    chown coder:coder "$INIT_MARKER"
+    chown $USERNAME:$USERNAME "$INIT_MARKER"
 elif [ -f "$INIT_MARKER" ]; then
     echo "Workspace already initialized, skipping" >> /var/log/sandbox/entrypoint.log
 fi
