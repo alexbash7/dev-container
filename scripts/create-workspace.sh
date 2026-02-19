@@ -14,7 +14,8 @@ CPU="0.5"
 MEMORY="512m"
 EXPIRES_HOURS=72
 JF_ID=""
-SANDBOX_HOST="code.trafflume.com"
+SANDBOX_HOST="dev.trafflume.com"
+PORT_BASE=42000  # Each workspace gets PORT_BASE+N*2 (ssh) and PORT_BASE+N*2+1 (web)
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -63,12 +64,36 @@ if ! docker image inspect dev-sandbox:latest >/dev/null 2>&1; then
 fi
 
 # ============================================================
-# 3. Create data directories
+# 3. Allocate fixed ports
+# ============================================================
+# Find next available port pair starting from PORT_BASE
+PORT_FILE="/opt/dev-sandbox/data/.next_port"
+if [ -f "$PORT_FILE" ]; then
+    NEXT_PORT=$(cat "$PORT_FILE")
+else
+    NEXT_PORT=$PORT_BASE
+fi
+
+# Ensure ports are free
+while ss -tlnp | grep -q ":${NEXT_PORT} " || ss -tlnp | grep -q ":$((NEXT_PORT+1)) "; do
+    NEXT_PORT=$((NEXT_PORT + 2))
+done
+
+SSH_PORT=$NEXT_PORT
+WEB_PORT=$((NEXT_PORT + 1))
+echo $((NEXT_PORT + 2)) > "$PORT_FILE"
+
+# ============================================================
+# 4. Create data directories
 # ============================================================
 mkdir -p "$DATA_DIR/workspace" "$DATA_DIR/logs"
 
+# Save ports
+echo "$SSH_PORT" > "$DATA_DIR/ssh_port"
+echo "$WEB_PORT" > "$DATA_DIR/web_port"
+
 # ============================================================
-# 4. Create container (stopped)
+# 5. Create container (stopped, with fixed ports)
 # ============================================================
 docker create \
     --name "$CONTAINER" \
@@ -82,28 +107,17 @@ docker create \
     --label sandbox.expires="$EXPIRES_AT" \
     --label sandbox.created="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
     --label sandbox.subdomain="$DOMAIN" \
+    --label sandbox.ssh_port="$SSH_PORT" \
+    --label sandbox.web_port="$WEB_PORT" \
     -e SANDBOX_PASSWORD="$PASSWORD" \
     -e TASK_REPO="$TASK_REPO" \
     -e TASK_FOLDER="$TASK_FOLDER" \
     -e CANDIDATE_NAME="$SANDBOX_NAME" \
     -v "$DATA_DIR/workspace:/home/coder/workspace" \
     -v "$DATA_DIR/logs:/var/log/sandbox" \
-    -p 0:22 \
-    -p 0:13337 \
+    -p ${SSH_PORT}:22 \
+    -p ${WEB_PORT}:13337 \
     dev-sandbox:latest >/dev/null
-
-# ============================================================
-# 5. Start briefly to get assigned ports, then stop
-# ============================================================
-docker start "$CONTAINER" >/dev/null
-sleep 3
-SSH_PORT=$(docker port "$CONTAINER" 22 2>/dev/null | head -1 | cut -d: -f2)
-WEB_PORT=$(docker port "$CONTAINER" 13337 2>/dev/null | head -1 | cut -d: -f2)
-docker stop "$CONTAINER" >/dev/null 2>&1
-
-# Save ports as labels (docker doesn't allow updating labels, so save to file)
-echo "$SSH_PORT" > "$DATA_DIR/ssh_port"
-echo "$WEB_PORT" > "$DATA_DIR/web_port"
 
 # ============================================================
 # 6. Create host user for SSH auto-start
