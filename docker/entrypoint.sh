@@ -21,7 +21,7 @@ chmod 700 /var/log/sandbox
 INIT_MARKER="/home/coder/workspace/.initialized"
 if [ ! -f "$INIT_MARKER" ] && [ -n "$TASK_REPO" ]; then
     echo "Initializing workspace: TASK_REPO=$TASK_REPO TASK_FOLDER=$TASK_FOLDER" >> /var/log/sandbox/entrypoint.log
-    sudo -u coder bash /usr/lib/sandbox/startup.sh >> /var/log/sandbox/entrypoint.log 2>&1
+    sudo -u coder TASK_REPO="$TASK_REPO" TASK_FOLDER="$TASK_FOLDER" CANDIDATE_NAME="$CANDIDATE_NAME" bash /usr/lib/sandbox/startup.sh >> /var/log/sandbox/entrypoint.log 2>&1
     RESULT=$?
     echo "startup.sh exit code: $RESULT" >> /var/log/sandbox/entrypoint.log
     touch "$INIT_MARKER"
