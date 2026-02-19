@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-WORKSPACE_DIR="/home/coder/workspace"
+WORKSPACE_DIR="${HOME:-/home/coder}/workspace"
 TASK_REPO="${TASK_REPO:-}"
 TASK_FOLDER="${TASK_FOLDER:-}"
 
